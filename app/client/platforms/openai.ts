@@ -504,6 +504,11 @@ export class ChatGPTApi implements LLMApi {
       },
     });
 
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(`Request failed with status ${res.status}: ${errText}`);
+    }
+
     const resJson = (await res.json()) as OpenAIListModelResponse;
     const chatModels = resJson.data?.filter((m) => !!m.id);
     console.log("[Models]", chatModels);
