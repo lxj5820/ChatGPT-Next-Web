@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fetch as undiciFetch, EnvHttpProxyAgent } from "undici";
 import { getServerSideConfig } from "../config/server";
 import { OPENAI_BASE_URL, ServiceProvider } from "../constant";
 import { cloudflareAIGatewayUrl } from "../utils/cloudflare";
 import { getModelProvider, isModelNotavailableInServer } from "../utils/model";
 
 const serverConfig = getServerSideConfig();
+
+const hasProxy =
+  process.env.HTTPS_PROXY ||
+  process.env.https_proxy ||
+  process.env.HTTP_PROXY ||
+  process.env.http_proxy;
+
+const proxyDispatcher = hasProxy ? new EnvHttpProxyAgent() : undefined;
 
 export async function requestOpenai(req: NextRequest) {
   const controller = new AbortController();
@@ -144,7 +153,11 @@ export async function requestOpenai(req: NextRequest) {
   }
 
   try {
-    const res = await fetch(fetchUrl, fetchOptions);
+    const res = await undiciFetch(fetchUrl, {
+      ...fetchOptions,
+      // @ts-ignore
+      dispatcher: proxyDispatcher,
+    } as any);
 
     // Extract the OpenAI-Organization header from the response
     const openaiOrganizationHeader = res.headers.get("OpenAI-Organization");
@@ -175,7 +188,7 @@ export async function requestOpenai(req: NextRequest) {
     // The browser will try to decode the response with brotli and fail
     newHeaders.delete("content-encoding");
 
-    return new Response(res.body, {
+    return new Response(res.body as any, {
       status: res.status,
       statusText: res.statusText,
       headers: newHeaders,
