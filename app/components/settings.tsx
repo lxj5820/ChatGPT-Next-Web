@@ -691,6 +691,26 @@ export function Settings() {
     </ListItem>
   );
 
+  const openAIApiKeyComponent = (
+    <ListItem
+      title={Locale.Settings.Access.OpenAI.ApiKey.Title}
+      subTitle={Locale.Settings.Access.OpenAI.ApiKey.SubTitle}
+    >
+      <PasswordInput
+        aria={Locale.Settings.ShowPassword}
+        aria-label={Locale.Settings.Access.OpenAI.ApiKey.Title}
+        value={accessStore.openaiApiKey}
+        type="text"
+        placeholder={Locale.Settings.Access.OpenAI.ApiKey.Placeholder}
+        onChange={(e) => {
+          accessStore.update(
+            (access) => (access.openaiApiKey = e.currentTarget.value),
+          );
+        }}
+      />
+    </ListItem>
+  );
+
   const useCustomConfigComponent = // Conditionally render the following ListItem based on clientConfig.isApp
     !clientConfig?.isApp && ( // only show if isApp is false
       <ListItem
@@ -729,23 +749,7 @@ export function Settings() {
           }
         ></input>
       </ListItem>
-      <ListItem
-        title={Locale.Settings.Access.OpenAI.ApiKey.Title}
-        subTitle={Locale.Settings.Access.OpenAI.ApiKey.SubTitle}
-      >
-        <PasswordInput
-          aria={Locale.Settings.ShowPassword}
-          aria-label={Locale.Settings.Access.OpenAI.ApiKey.Title}
-          value={accessStore.openaiApiKey}
-          type="text"
-          placeholder={Locale.Settings.Access.OpenAI.ApiKey.Placeholder}
-          onChange={(e) => {
-            accessStore.update(
-              (access) => (access.openaiApiKey = e.currentTarget.value),
-            );
-          }}
-        />
-      </ListItem>
+      {openAIApiKeyComponent}
     </>
   );
 
@@ -1793,6 +1797,8 @@ export function Settings() {
           {!accessStore.hideUserApiKey && (
             <>
               {useCustomConfigComponent}
+
+              {!accessStore.useCustomConfig && openAIApiKeyComponent}
 
               {accessStore.useCustomConfig && (
                 <>
