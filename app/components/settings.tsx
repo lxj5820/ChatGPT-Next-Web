@@ -1833,11 +1833,19 @@ export function Settings() {
                         );
                       }}
                     >
-                      {Object.entries(ServiceProvider).map(([k, v]) => (
-                        <option value={v} key={k}>
-                          {k}
-                        </option>
-                      ))}
+                      {Object.entries(ServiceProvider)
+                        .filter(([, v]) =>
+                          [
+                            ServiceProvider.OpenAI,
+                            ServiceProvider.SiliconFlow,
+                            ServiceProvider["302.AI"],
+                          ].includes(v as ServiceProvider),
+                        )
+                        .map(([k, v]) => (
+                          <option value={v} key={k}>
+                            {k}
+                          </option>
+                        ))}
                     </Select>
                   </ListItem>
 
