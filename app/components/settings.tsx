@@ -639,7 +639,7 @@ export function Settings() {
     try {
       const api = getClientApi(accessStore.provider);
       const models = await api.llm.models();
-      config.mergeModels(models);
+      config.replaceModels(models);
       showToast(Locale.Settings.Access.FetchModels.Success);
     } catch (e) {
       showToast(Locale.Settings.Access.FetchModels.Failed);
