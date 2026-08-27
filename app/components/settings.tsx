@@ -86,6 +86,7 @@ import { useMaskStore } from "../store/mask";
 import { ProviderType } from "../utils/cloud";
 import { TTSConfigList } from "./tts-config";
 import { RealtimeConfigList } from "./realtime-chat/realtime-config";
+import { getClientApi } from "../client/api";
 
 function EditPromptModal(props: { id: string; onClose: () => void }) {
   const promptStore = usePromptStore();
@@ -630,6 +631,21 @@ export function Settings() {
     updateStore.updateUsage(force).finally(() => {
       setLoadingUsage(false);
     });
+  }
+
+  const [loadingModels, setLoadingModels] = useState(false);
+  async function fetchProviderModels() {
+    setLoadingModels(true);
+    try {
+      const api = getClientApi(accessStore.provider);
+      const models = await api.llm.models();
+      config.mergeModels(models);
+      showToast(Locale.Settings.Access.FetchModels.Success);
+    } catch (e) {
+      showToast(Locale.Settings.Access.FetchModels.Failed);
+    } finally {
+      setLoadingModels(false);
+    }
   }
 
   const enabledAccessControl = useMemo(
@@ -1889,6 +1905,18 @@ export function Settings() {
                 )
               }
             ></input>
+          </ListItem>
+
+          <ListItem
+            title={Locale.Settings.Access.FetchModels.Title}
+            subTitle={Locale.Settings.Access.FetchModels.SubTitle}
+          >
+            <IconButton
+              text={Locale.Settings.Access.FetchModels.Title}
+              icon={loadingModels ? <LoadingIcon /> : ResetIcon}
+              onClick={fetchProviderModels}
+              disabled={loadingModels}
+            />
           </ListItem>
         </List>
 

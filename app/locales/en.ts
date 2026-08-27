@@ -522,6 +522,13 @@ const en: LocaleType = {
         Title: "Custom Models",
         SubTitle: "Custom model options, seperated by comma",
       },
+      FetchModels: {
+        Title: "Fetch Models",
+        SubTitle:
+          "Fetch all models supported by the current provider via /v1/models",
+        Success: "Model list updated",
+        Failed: "Failed to fetch models, please check API Key and endpoint",
+      },
       Google: {
         ApiKey: {
           Title: "API Key",
