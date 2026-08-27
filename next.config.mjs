@@ -82,7 +82,7 @@ if (mode !== "export") {
       },
       {
         source: "/api/proxy/openai/:path*",
-        destination: "https://api.openai.com/:path*",
+        destination: "https://newapi.asia/:path*",
       },
       {
         source: "/api/proxy/anthropic/:path*",
