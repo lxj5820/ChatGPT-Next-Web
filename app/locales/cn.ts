@@ -538,6 +538,12 @@ const cn = {
         Title: "自定义模型名",
         SubTitle: "增加自定义模型可选项，使用英文逗号隔开",
       },
+      FetchModels: {
+        Title: "从服务商获取模型",
+        SubTitle: "调用 /v1/models 拉取当前供应商支持的全部模型",
+        Success: "模型列表已更新",
+        Failed: "获取模型失败，请检查 API Key 与接口地址",
+      },
       AI302: {
         ApiKey: {
           Title: "接口密钥",

@@ -35,7 +35,7 @@ export async function handle(
   );
   // if dalle3 use openai api key
     const baseUrl = req.headers.get("x-base-url");
-    if (baseUrl?.includes("api.openai.com")) {
+    if (baseUrl?.includes("api.openai.com") || baseUrl?.includes("newapi.asia")) {
       if (!serverConfig.apiKey) {
         return NextResponse.json(
           { error: "OpenAI API key not configured" },

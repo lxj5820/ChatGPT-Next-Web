@@ -263,6 +263,11 @@ export class SiliconflowApi implements LLMApi {
       },
     });
 
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(`Request failed with status ${res.status}: ${errText}`);
+    }
+
     const resJson = (await res.json()) as SiliconFlowListModelResponse;
     const chatModels = resJson.data;
     console.log("[Models]", chatModels);

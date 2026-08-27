@@ -191,6 +191,14 @@ export const useAppConfig = createPersistStore(
       }));
     },
 
+    replaceModels(newModels: LLMModel[]) {
+      if (!newModels || newModels.length === 0) {
+        return;
+      }
+
+      set(() => ({ models: newModels }));
+    },
+
     allModels() {},
   }),
   {

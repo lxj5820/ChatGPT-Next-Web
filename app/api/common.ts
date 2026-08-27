@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fetch as undiciFetch, EnvHttpProxyAgent } from "undici";
 import { getServerSideConfig } from "../config/server";
 import { OPENAI_BASE_URL, ServiceProvider } from "../constant";
 import { cloudflareAIGatewayUrl } from "../utils/cloudflare";
@@ -6,31 +7,23 @@ import { getModelProvider, isModelNotavailableInServer } from "../utils/model";
 
 const serverConfig = getServerSideConfig();
 
+const hasProxy =
+  process.env.HTTPS_PROXY ||
+  process.env.https_proxy ||
+  process.env.HTTP_PROXY ||
+  process.env.http_proxy;
+
+const proxyDispatcher = hasProxy ? new EnvHttpProxyAgent() : undefined;
+
 export async function requestOpenai(req: NextRequest) {
   const controller = new AbortController();
 
-  const isAzure = req.nextUrl.pathname.includes("azure/deployments");
-
-  var authValue,
-    authHeaderName = "";
-  if (isAzure) {
-    authValue =
-      req.headers
-        .get("Authorization")
-        ?.trim()
-        .replaceAll("Bearer ", "")
-        .trim() ?? "";
-
-    authHeaderName = "api-key";
-  } else {
-    authValue = req.headers.get("Authorization") ?? "";
-    authHeaderName = "Authorization";
-  }
+  const authValue = req.headers.get("Authorization") ?? "";
+  const authHeaderName = "Authorization";
 
   let path = `${req.nextUrl.pathname}`.replaceAll("/api/openai/", "");
 
-  let baseUrl =
-    (isAzure ? serverConfig.azureUrl : serverConfig.baseUrl) || OPENAI_BASE_URL;
+  let baseUrl = serverConfig.baseUrl || OPENAI_BASE_URL;
 
   if (!baseUrl.startsWith("http")) {
     baseUrl = `https://${baseUrl}`;
@@ -49,44 +42,6 @@ export async function requestOpenai(req: NextRequest) {
     },
     10 * 60 * 1000,
   );
-
-  if (isAzure) {
-    const azureApiVersion =
-      req?.nextUrl?.searchParams?.get("api-version") ||
-      serverConfig.azureApiVersion;
-    baseUrl = baseUrl.split("/deployments").shift() as string;
-    path = `${req.nextUrl.pathname.replaceAll(
-      "/api/azure/",
-      "",
-    )}?api-version=${azureApiVersion}`;
-
-    // Forward compatibility:
-    // if display_name(deployment_name) not set, and '{deploy-id}' in AZURE_URL
-    // then using default '{deploy-id}'
-    if (serverConfig.customModels && serverConfig.azureUrl) {
-      const modelName = path.split("/")[1];
-      let realDeployName = "";
-      serverConfig.customModels
-        .split(",")
-        .filter((v) => !!v && !v.startsWith("-") && v.includes(modelName))
-        .forEach((m) => {
-          const [fullName, displayName] = m.split("=");
-          const [_, providerName] = getModelProvider(fullName);
-          if (providerName === "azure" && !displayName) {
-            const [_, deployId] = (serverConfig?.azureUrl ?? "").split(
-              "deployments/",
-            );
-            if (deployId) {
-              realDeployName = deployId;
-            }
-          }
-        });
-      if (realDeployName) {
-        console.log("[Replace with DeployId", realDeployName);
-        path = path.replaceAll(modelName, realDeployName);
-      }
-    }
-  }
 
   const fetchUrl = cloudflareAIGatewayUrl(`${baseUrl}/${path}`);
   console.log("fetchUrl", fetchUrl);
@@ -123,7 +78,6 @@ export async function requestOpenai(req: NextRequest) {
           jsonBody?.model as string,
           [
             ServiceProvider.OpenAI,
-            ServiceProvider.Azure,
             jsonBody?.model as string, // support provider-unspecified model
           ],
         )
@@ -144,7 +98,11 @@ export async function requestOpenai(req: NextRequest) {
   }
 
   try {
-    const res = await fetch(fetchUrl, fetchOptions);
+    const res = await undiciFetch(fetchUrl, {
+      ...fetchOptions,
+      // @ts-ignore
+      dispatcher: proxyDispatcher,
+    } as any);
 
     // Extract the OpenAI-Organization header from the response
     const openaiOrganizationHeader = res.headers.get("OpenAI-Organization");
@@ -175,7 +133,7 @@ export async function requestOpenai(req: NextRequest) {
     // The browser will try to decode the response with brotli and fail
     newHeaders.delete("content-encoding");
 
-    return new Response(res.body, {
+    return new Response(res.body as any, {
       status: res.status,
       statusText: res.statusText,
       headers: newHeaders,
